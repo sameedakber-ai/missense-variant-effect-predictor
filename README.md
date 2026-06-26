@@ -24,14 +24,27 @@ The pipeline follows the central dogma: DNA → RNA → protein. Variants are di
 | Molecular weight change | Difference in residue size |
 | BLOSUM62 score | Evolutionary substitution likelihood (the single most informative feature) |
 
-## Installation
+## Getting Started
+
+The project runs in a containerized, reproducible environment built with Docker and Miniconda. No local Python setup is required beyond Docker.
+
+### Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/) and Docker Compose
+
+### Build and run
 
 ```bash
-python -m venv venv && source venv/bin/activate   # Windows: venv\Scripts\activate
-pip install biopython pandas scikit-learn numpy requests fastapi uvicorn xgboost matplotlib seaborn
+# Build the image and start the container
+docker compose up -d --build
+
+# Open a shell inside the running container
+docker compose exec bioinfo bash
 ```
 
-## Usage
+All bioinformatics dependencies (BioPython, pandas, scikit-learn, XGBoost, and aligners) are defined in `environment.yml` and installed automatically during the build.
+
+### Run the feature extractor
 
 ```bash
 python features.py
@@ -39,9 +52,22 @@ python features.py
 
 The `extract_features` function parses HGVS protein notation, validates the wild-type residue against the reference sequence, and computes the full feature vector for each variant.
 
+### Launch Jupyter (optional)
+
+```bash
+docker compose run --rm --service-ports bioinfo \
+    jupyter notebook --ip=0.0.0.0 --no-browser --allow-root
+```
+
+### Shut down
+
+```bash
+docker compose down
+```
+
 ## Data
 
-Labeled variants are sourced from **ClinVar** (variant summary) or the **dbNSFP** academic subset. Each record provides a pathogenic/benign label, HGVS protein notation, and an associated UniProt sequence.
+Labeled variants are sourced from **ClinVar** (variant summary) or the **dbNSFP** academic subset. Each record provides a pathogenic/benign label, HGVS protein notation, and an associated UniProt sequence. Mount your data into the container via the `./data` volume.
 
 ## Validation
 

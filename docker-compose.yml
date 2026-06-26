@@ -1,0 +1,22 @@
+services:
+  bioinfo:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: bioinfo-project
+    container_name: bioinfo
+    volumes:
+      - ./:/workspace                 # project files
+      - ./data:/data                  # raw data / inputs
+      - ./references:/references      # reference genomes, indices
+      - ./results:/results            # pipeline outputs
+    ports:
+      - "8888:8888"                   # Jupyter
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    deploy:
+      resources:
+        limits:
+          cpus: "8"
+          memory: 16G

@@ -1,0 +1,27 @@
+name: bioinfo
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.13
+  - numpy
+  - pandas
+  - scipy
+  - matplotlib
+  - jupyter
+  - biopython
+  - samtools
+  - bcftools
+  - bwa
+  - bowtie2
+  - hisat2
+  - star
+  - salmon
+  - fastqc
+  - multiqc
+  - trimmomatic
+  - bedtools
+  - blast
+  - snakemake
+  - pysam

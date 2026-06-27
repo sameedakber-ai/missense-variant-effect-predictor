@@ -24,6 +24,19 @@ The pipeline follows the central dogma: DNA → RNA → protein. Variants are di
 | Molecular weight change | Difference in residue size |
 | BLOSUM62 score | Evolutionary substitution likelihood (the single most informative feature) |
 
+## Project Structure
+variant_effect_prediction/
+├─ Dockerfile              # Reproducible Miniconda-based environment
+├─ docker-compose.yml      # Container orchestration and volume mounts
+├─ environment.yml         # Conda/pip dependencies
+├─ download_clinvar.py     # Fetch the ClinVar dataset with integrity check
+├─ features.py             # Missense variant feature extraction
+├─ notebooks/              # Exploratory analysis (numbered, in order)
+│  └─ 01_data_exploration.ipynb
+├─ references/             # Source papers and notes
+├─ data/                   # Downloaded datasets (git-ignored)
+└─ results/                # Model outputs and figures
+
 ## Getting Started
 
 The project runs in a containerized, reproducible environment built with Docker and Miniconda. No local Python setup is required beyond Docker.
@@ -44,6 +57,22 @@ docker compose exec bioinfo bash
 
 All bioinformatics dependencies (BioPython, pandas, scikit-learn, XGBoost, and aligners) are defined in `environment.yml` and installed automatically during the build.
 
+### Enable clean notebook diffs (after cloning)
+
+Notebooks are committed with their outputs stripped via [nbstripout](https://github.com/kynan/nbstripout), keeping the repository free of noisy, conflict-prone diffs. The filter is configured in the container automatically; if you also commit from the host, enable it there once:
+
+```bash
+nbstripout --install --attributes .gitattributes
+```
+
+### Download the data
+
+```bash
+python download_clinvar.py
+```
+
+This fetches the ClinVar `variant_summary` dataset into `./data` and verifies the download against NCBI's published MD5 checksum. The file is gzipped and read directly — no manual decompression needed.
+
 ### Run the feature extractor
 
 ```bash
@@ -59,6 +88,8 @@ docker compose run --rm --service-ports bioinfo \
     jupyter notebook --ip=0.0.0.0 --no-browser --allow-root
 ```
 
+Start with `notebooks/01_data_exploration.ipynb`, which loads the ClinVar data and reduces it to the confidently-labeled missense SNVs used downstream.
+
 ### Shut down
 
 ```bash
@@ -67,7 +98,9 @@ docker compose down
 
 ## Data
 
-Labeled variants are sourced from **ClinVar** (variant summary) or the **dbNSFP** academic subset. Each record provides a pathogenic/benign label, HGVS protein notation, and an associated UniProt sequence. Mount your data into the container via the `./data` volume.
+Labeled variants are sourced from **ClinVar** (variant summary) or the **dbNSFP** academic subset. Each record provides a pathogenic/benign label, HGVS protein notation, and an associated UniProt sequence.
+
+Run `download_clinvar.py` to fetch the ClinVar variant summary into `./data`, which is mounted into the container and excluded from version control. ClinVar publishes a new release on the first Thursday of each month; record the access date for reproducibility.
 
 ## Validation
 

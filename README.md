@@ -25,6 +25,8 @@ The pipeline follows the central dogma: DNA → RNA → protein. Variants are di
 | BLOSUM62 score | Evolutionary substitution likelihood (the single most informative feature) |
 
 ## Project Structure
+
+```text
 variant_effect_prediction/
 ├─ Dockerfile              # Reproducible Miniconda-based environment
 ├─ docker-compose.yml      # Container orchestration and volume mounts
@@ -36,6 +38,7 @@ variant_effect_prediction/
 ├─ references/             # Source papers and notes
 ├─ data/                   # Downloaded datasets (git-ignored)
 └─ results/                # Model outputs and figures
+```
 
 ## Getting Started
 

@@ -25,3 +25,4 @@ dependencies:
   - blast
   - snakemake
   - pysam
+  - nbstripout

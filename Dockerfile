@@ -32,5 +32,12 @@ ENV PATH /opt/miniconda3/envs/bioinfo/bin:$PATH
 
 WORKDIR /workspace
 
+# Configure nbstripout in the container's git so notebook outputs are
+# stripped on commit even when committing from inside the container.
+RUN git config --global filter.nbstripout.clean nbstripout && \
+    git config --global filter.nbstripout.smudge cat && \
+    git config --global filter.nbstripout.required true && \
+    git config --global diff.ipynb.textconv "nbstripout -t"
+
 ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "bioinfo"]
 CMD ["/bin/bash"]

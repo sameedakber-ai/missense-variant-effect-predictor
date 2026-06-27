@@ -28,8 +28,9 @@ RUN conda env create -f /tmp/environment.yml && conda clean -afy
 
 # Activate environment by default
 SHELL ["conda", "run", "-n", "bioinfo", "/bin/bash", "-c"]
-ENV PATH /opt/conda/envs/bioinfo/bin:$PATH
+ENV PATH /opt/miniconda3/envs/bioinfo/bin:$PATH
 
 WORKDIR /workspace
 
+ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "bioinfo"]
 CMD ["/bin/bash"]

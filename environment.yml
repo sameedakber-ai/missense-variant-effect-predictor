@@ -26,3 +26,6 @@ dependencies:
   - snakemake
   - pysam
   - nbstripout
+  - pip
+  - pip:
+      - -e .

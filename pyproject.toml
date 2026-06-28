@@ -1,0 +1,12 @@
+[project]
+name = "variant-effect-prediction"
+version = "0.1.0"
+description = "ML pipeline for predicting missense variant pathogenicity"
+requires-python = ">=3.13"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["features", "download_clinvar", "clinvar_parse"]

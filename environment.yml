@@ -28,6 +28,7 @@ dependencies:
   - pysam
   - nbstripout
   - fastparquet
+  - fastapi
+  - uvicorn
+  - pydantic
   - pip
-  - pip:
-      - -e .

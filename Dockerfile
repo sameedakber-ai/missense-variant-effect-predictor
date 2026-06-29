@@ -32,6 +32,13 @@ ENV PATH /opt/miniconda3/envs/bioinfo/bin:$PATH
 
 WORKDIR /workspace
 
+# Copy the packaging metadata and modules needed for the editable install,
+# THEN install the project into the conda env. Done as a separate step so
+# the (slow) conda env build stays cached when only project code changes.
+COPY pyproject.toml /workspace/pyproject.toml
+COPY features.py download_clinvar.py clinvar_parse.py load_clinvar.py /workspace/
+RUN pip install -e .
+
 # Configure nbstripout in the container's git so notebook outputs are
 # stripped on commit even when committing from inside the container.
 RUN git config --global filter.nbstripout.clean nbstripout && \

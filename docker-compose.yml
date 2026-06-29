@@ -20,3 +20,21 @@ services:
         limits:
           cpus: "8"
           memory: 16G
+
+  api:
+    image: bioinfo-project          # reuse the image built by the bioinfo service
+    container_name: bioinfo-api
+    depends_on:
+      - bioinfo                      # ensures the image is built first
+    # Run as the same non-root host user, so it can read model.joblib on the mount.
+    user: "${USER_ID:-1000}:${GROUP_ID:-1000}"
+    volumes:
+      - ./:/workspace                # project files incl. app.py, features.py, model.joblib
+    working_dir: /workspace
+    ports:
+      - "8000:8000"                  # FastAPI / Swagger UI at http://localhost:8000/docs
+    # Override the image's default entrypoint to launch the API.
+    # --host 0.0.0.0 is REQUIRED so the server is reachable from outside the container.
+    command: >
+      uvicorn app:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped

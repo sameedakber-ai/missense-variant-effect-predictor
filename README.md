@@ -36,6 +36,7 @@ variant_effect_prediction/
 ├─ load_clinvar.py         # Load + filter + label raw ClinVar (memory-safe)
 ├─ clinvar_parse.py        # Parse ClinVar Names into protein consequences
 ├─ features.py             # Missense variant feature extraction
+├─ app.py                  # FastAPI service exposing the trained model
 ├─ notebooks/              # Staged analysis (numbered, run in order)
 │  ├─ 01_data_exploration.ipynb       # reads raw,       writes interim
 │  ├─ 02_feature_engineering.ipynb    # reads interim,   writes processed
@@ -53,7 +54,9 @@ The pipeline is organized as three staged notebooks that hand off through
 **Parquet checkpoints** on disk: each notebook reads one data layer and writes
 the next, so any stage can be re-run independently. Pure logic (loading,
 parsing, feature extraction) lives in importable modules; the notebooks
-orchestrate and explore. See `README_ARCHITECTURE.md` for the full rationale.
+orchestrate and explore. The trained model is served over HTTP by `app.py`,
+which imports the same `features.py` used in training so inference and training
+compute features identically. See `README_ARCHITECTURE.md` for the full rationale.
 
 ## Getting Started
 
@@ -108,6 +111,33 @@ The notebooks form an ordered pipeline; run them in sequence. Each reads the pre
 ```bash
 pytest tests/
 ```
+
+### Serve predictions (API)
+
+Once `03_modeling.ipynb` has produced `model.joblib`, the prediction API starts
+automatically with `docker compose up`. It runs alongside the `bioinfo`
+container, reusing the same image so serving shares the training dependencies
+and feature code.
+
+```bash
+# The api service is part of the compose stack; bring it up (or it's already up)
+docker compose up -d api
+
+# Interactive Swagger UI — try the model from the browser
+# http://localhost:8000/docs
+
+# Or call it directly
+curl -X POST http://localhost:8000/predict \
+    -H "Content-Type: application/json" \
+    -d '{"variant": "p.Arg175His"}'
+
+# Liveness / model-loaded check
+curl http://localhost:8000/health
+```
+
+The `/docs` page is an auto-generated, interactive interface where users can
+submit a variant and see the predicted pathogenicity score without writing any
+client code.
 
 ### Launch Jupyter (optional)
 

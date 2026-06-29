@@ -8,6 +8,7 @@ dependencies:
   - numpy
   - pandas
   - scipy
+  - scikit-learn
   - matplotlib
   - jupyter
   - biopython
@@ -26,6 +27,7 @@ dependencies:
   - snakemake
   - pysam
   - nbstripout
+  - fastparquet
   - pip
   - pip:
       - -e .

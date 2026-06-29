@@ -31,14 +31,29 @@ variant_effect_prediction/
 ├─ Dockerfile              # Reproducible Miniconda-based environment
 ├─ docker-compose.yml      # Container orchestration and volume mounts
 ├─ environment.yml         # Conda/pip dependencies
+├─ pyproject.toml          # Editable install so modules import in notebooks
 ├─ download_clinvar.py     # Fetch the ClinVar dataset with integrity check
+├─ load_clinvar.py         # Load + filter + label raw ClinVar (memory-safe)
+├─ clinvar_parse.py        # Parse ClinVar Names into protein consequences
 ├─ features.py             # Missense variant feature extraction
-├─ notebooks/              # Exploratory analysis (numbered, in order)
-│  └─ 01_data_exploration.ipynb
+├─ notebooks/              # Staged analysis (numbered, run in order)
+│  ├─ 01_data_exploration.ipynb       # reads raw,       writes interim
+│  ├─ 02_feature_engineering.ipynb    # reads interim,   writes processed
+│  └─ 03_modeling.ipynb               # reads processed, writes model
+├─ tests/                  # pytest for the module logic
 ├─ references/             # Source papers and notes
-├─ data/                   # Downloaded datasets (git-ignored)
+├─ data/                   # Datasets (git-ignored)
+│  ├─ raw/                 # immutable downloaded source
+│  ├─ interim/             # cleaned, labeled checkpoint
+│  └─ processed/           # model-ready feature matrix
 └─ results/                # Model outputs and figures
 ```
+
+The pipeline is organized as three staged notebooks that hand off through
+**Parquet checkpoints** on disk: each notebook reads one data layer and writes
+the next, so any stage can be re-run independently. Pure logic (loading,
+parsing, feature extraction) lives in importable modules; the notebooks
+orchestrate and explore. See `README_ARCHITECTURE.md` for the full rationale.
 
 ## Getting Started
 
@@ -58,7 +73,7 @@ docker compose up -d --build
 docker compose exec bioinfo bash
 ```
 
-All bioinformatics dependencies (BioPython, pandas, scikit-learn, XGBoost, and aligners) are defined in `environment.yml` and installed automatically during the build.
+All bioinformatics dependencies (BioPython, pandas, scikit-learn, fastparquet, and aligners) are defined in `environment.yml` and installed automatically during the build.
 
 ### Enable clean notebook diffs (after cloning)
 
@@ -74,15 +89,25 @@ nbstripout --install --attributes .gitattributes
 python download_clinvar.py
 ```
 
-This fetches the ClinVar `variant_summary` dataset into `./data` and verifies the download against NCBI's published MD5 checksum. The file is gzipped and read directly — no manual decompression needed.
+This fetches the ClinVar `variant_summary` dataset into `./data/raw` and verifies the download against NCBI's published MD5 checksum. The file is gzipped and read directly — no manual decompression needed.
 
-### Run the feature extractor
+### Run the pipeline
 
-```bash
-python features.py
+The notebooks form an ordered pipeline; run them in sequence. Each reads the previous stage's checkpoint and writes its own:
+
+```text
+01_data_exploration.ipynb     raw        → data/interim/labeled_snvs.parquet
+02_feature_engineering.ipynb  interim    → data/processed/feature_matrix.parquet
+03_modeling.ipynb             processed  → model.joblib
 ```
 
-The `extract_features` function parses HGVS protein notation, validates the wild-type residue against the reference sequence, and computes the full feature vector for each variant.
+`01` loads the ClinVar data via `load_clinvar.py` and reduces it to the confidently-labeled SNVs used downstream; `02` classifies consequences and builds the feature matrix; `03` trains and validates the classifier.
+
+### Run the tests
+
+```bash
+pytest tests/
+```
 
 ### Launch Jupyter (optional)
 
@@ -90,8 +115,6 @@ The `extract_features` function parses HGVS protein notation, validates the wild
 docker compose run --rm --service-ports bioinfo \
     jupyter notebook --ip=0.0.0.0 --no-browser --allow-root
 ```
-
-Start with `notebooks/01_data_exploration.ipynb`, which loads the ClinVar data and reduces it to the confidently-labeled missense SNVs used downstream.
 
 ### Shut down
 
@@ -103,11 +126,11 @@ docker compose down
 
 Labeled variants are sourced from **ClinVar** (variant summary) or the **dbNSFP** academic subset. Each record provides a pathogenic/benign label, HGVS protein notation, and an associated UniProt sequence.
 
-Run `download_clinvar.py` to fetch the ClinVar variant summary into `./data`, which is mounted into the container and excluded from version control. ClinVar publishes a new release on the first Thursday of each month; record the access date for reproducibility.
+Run `download_clinvar.py` to fetch the ClinVar variant summary into `./data/raw`, which is mounted into the container and excluded from version control. ClinVar publishes a new release on the first Thursday of each month; record the access date for reproducibility.
 
 ## Validation
 
-Model performance is assessed via **ROC curves** with five-fold cross-validation.
+Two models are trained and compared — an interpretable logistic-regression baseline and a gradient-boosting classifier. Performance is assessed via **ROC and precision-recall curves** with five-fold stratified cross-validation, plus a gene-held-out check to guard against leakage.
 
 ## References
 
